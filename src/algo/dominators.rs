@@ -240,6 +240,27 @@ fn simple_fast_post_order<G>(graph: G,
     (post_order, predecessor_sets)
 }
 
+
+/// Lengauer-Tarjan algorithm for finding dominators in a flowgraph
+/// The simple implementation runs in **O(|E| log V)**.
+/// The sophisticated implementation run in **O(|E| a(|E|, |V|))** time where **a** is the inverse
+/// Ackermann function.
+///
+/// [1]: https://www.cs.princeton.edu/courses/archive/fall03/cs528/handouts/a%20fast%20algorithm%20for%20finding.pdf
+
+
+/// Computes the semidominators of a node using the formula
+/// semi(w) = min({ v | (v, w) in E and v < w} U { semi(u) | u > w and (v, w) in E . u -> v})
+fn semidominators<G>(g: G,
+                     w: G::NodeId)
+    -> Vec<G::NodeId>
+    where G: IntoNeighbors + Visitable
+{
+    return Vec::new();
+}
+
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
