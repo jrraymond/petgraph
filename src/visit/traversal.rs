@@ -45,7 +45,7 @@ pub struct Dfs<N, VM> {
 impl<N, VM> Dfs<N, VM>
     where N: Copy + PartialEq,
           VM: VisitMap<N>,
-{
+
     /// Create a new **Dfs**, using the graph's visitor map, and put **start**
     /// in the stack of nodes to visit.
     pub fn new<G>(graph: G, start: N) -> Self

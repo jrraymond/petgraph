@@ -15,7 +15,7 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
-use visit::{DfsPostOrder, GraphBase, IntoNeighbors, Visitable, Walker};
+use visit::{Dfs, DfsPostOrder, GraphBase, NodeCount, IntoNeighbors, Visitable, Walker};
 
 /// The dominance relation for some graph and root.
 #[derive(Debug, Clone)]
@@ -247,16 +247,60 @@ fn simple_fast_post_order<G>(graph: G,
 /// Ackermann function.
 ///
 /// [1]: https://www.cs.princeton.edu/courses/archive/fall03/cs528/handouts/a%20fast%20algorithm%20for%20finding.pdf
-
-
-/// Computes the semidominators of a node using the formula
-/// semi(w) = min({ v | (v, w) in E and v < w} U { semi(u) | u > w and (v, w) in E . u -> v})
-fn semidominators<G>(g: G,
-                     w: G::NodeId)
-    -> Vec<G::NodeId>
-    where G: IntoNeighbors + Visitable
+fn lengauer_tarjan<G>(g: G,
+                      root: G::NodeId)
+    where G: IntoNeighbors + Visitable + NodeCount,
+          <G as GraphBase>::NodeId: Eq + Hash
 {
-    return Vec::new();
+    /// (1) Number the nodes using DFS, initialize variables for steps 2&3.
+    /// (2) Calculate semidominator of each vertex in decreasing number using the following
+    ///     theorem:
+    ///       semi(w) = min({v|(v,w) in E and v<w} U {semi(u)| u>w and (v,w) in E.u->v})
+    ///
+    /// (3) Implicitly define immediate dominator of each vertex using the following corollary.
+    ///         let u be a vertex for which sdom(u) is the minimum among vertices
+    ///         satisfying sdom(w)-+->u->w, then
+    ///           idom(w) = sdom(w) if sdom(w) = sdom(u)
+    ///                     idom(u) otherwise
+    /// (4) Explicity define the immediate dominator of vertex in decreasing number.
+    
+    /// semi(w) is i) initially 0
+    ///     ii) after (1) the number of the vertex in DFS
+    ///     iii) after (3) vertex number of the semidominator of w
+    let mut semi = HashMap::new();
+
+    /// vertex(i) is the vertex with # i
+    let mut vertex = Vec::new();
+
+    /// bucket(w) is the set of vertices whose semidominator is w
+    //let mut bucket = HashMap::new();
+
+    /// the predecessor sets of node
+    let mut predecessor_sets = HashMap::new();
+
+    /// (1)
+    for (i, node) in Dfs::new(g, root).iter(g).enumerate() {
+        vertex.push(node);
+        semi.insert(node, i);
+        for successor in g.neighbors(node) {
+            let mut predecessors = predecessor_sets.entry(successor)
+                .or_insert_with(HashSet::new);
+            predecessors.insert(node);
+        }
+    }
+
+    /// (2)
+    for &node in vertex.iter().rev() {
+        let semidominator = predecessor_sets.get(&node)
+            .unwrap_or(&HashSet::new())
+            .iter()
+            .map(|x| semi.get(x).unwrap())
+            .min();
+        match semidominator {
+            None => (),
+            Some(&s) => {semi.insert(node, s);},
+        };
+    }
 }
 
 
